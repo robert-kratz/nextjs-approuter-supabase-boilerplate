@@ -14,7 +14,7 @@ env:
 
 jobs:
     build:
-        name: Typecheck and Build
+        name: Typecheck, Build, Docker image
         runs-on: ubuntu-latest
 
         steps:
@@ -30,7 +30,6 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            # Optional generate Drizzle artifacts before build
             - name: Generate Drizzle
               run: npm run db:generate
 
@@ -40,7 +39,7 @@ jobs:
             - name: Build Next.js
               run: npm run build
 
-            - name: Upload build artifact
+            - name: Upload Next build
               uses: actions/upload-artifact@v4
               with:
                   name: next-build
@@ -48,3 +47,29 @@ jobs:
                       .next
                       package.json
                       package-lock.json
+
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Docker build (load to local)
+              run: |
+                  IMAGE_TAG="${{ github.sha }}"
+                  docker buildx build \
+                    --load \
+                    --file Dockerfile \
+                    --tag rjks-erp:${IMAGE_TAG} \
+                    .
+                  echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
+            - name: Save image as tar
+              run: |
+                  docker save rjks-erp:${IMAGE_TAG} -o next-app-image-${IMAGE_TAG}.tar
+
+            - name: Upload Docker image artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: docker-image
+                  path: next-app-image-${{ env.IMAGE_TAG }}.tar
