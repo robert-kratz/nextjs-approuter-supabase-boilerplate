@@ -1,0 +1,50 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+permissions:
+    contents: read
+
+env:
+    NEXT_TELEMETRY_DISABLED: 1
+    NODE_OPTIONS: --max_old_space_size=4096
+
+jobs:
+    build:
+        name: Typecheck and Build
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Use Node.js 20
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            # Optional generate Drizzle artifacts before build
+            - name: Generate Drizzle
+              run: npm run db:generate
+
+            - name: Typecheck
+              run: npx tsc -p .
+
+            - name: Build Next.js
+              run: npm run build
+
+            - name: Upload build artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: next-build
+                  path: |
+                      .next
+                      package.json
+                      package-lock.json
