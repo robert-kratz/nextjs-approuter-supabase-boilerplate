@@ -15,8 +15,6 @@ Production-ready **Next.js App Router** boilerplate using **Supabase**, **Drizzl
 | Validation    | Zod                                              |
 | Tooling       | drizzle-kit, tsx, dotenv, dotenv-cli             |
 
----
-
 ## Project Structure
 
 ```bash
