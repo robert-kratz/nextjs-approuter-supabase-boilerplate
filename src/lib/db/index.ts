@@ -1,3 +1,4 @@
+/* eslint-disable */
 // src/lib/db/index.ts
 
 try {

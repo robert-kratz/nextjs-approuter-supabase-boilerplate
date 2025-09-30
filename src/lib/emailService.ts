@@ -1,29 +1,27 @@
+/* eslint-disable */
+
 // lib/emailService.ts
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import Handlebars from 'handlebars';
 import nodemailer, { Transporter, SendMailOptions } from 'nodemailer';
 
-/** Sprachen strikt */
 export type Lang = 'de' | 'en';
 export type DefaultLang = Lang;
 
 /** Globale Konfiguration */
 export type EmailServiceConfig = {
-    templatesDir?: string; // Standard: <projectRoot>/templates
-    transporter?: Transporter; // optional, sonst via ENV
-    defaultLang?: DefaultLang; // globaler Default
-    languages?: readonly Lang[]; // global erlaubte Sprachen
+    templatesDir?: string;
+    transporter?: Transporter;
+    defaultLang?: DefaultLang;
+    languages?: readonly Lang[];
 };
 
 export type Attachment = NonNullable<SendMailOptions['attachments']>[number];
 
-/** Definition einer typisierten E‑Mail */
 export type EmailDefinition<TData> = {
-    id: string; // Ordner unter /templates
-    /** optional engere Auswahl pro E‑Mail, sonst globale languages */
+    id: string;
     languages?: readonly Lang[];
-    /** baut alle Betreff‑Varianten strikt typisiert */
     subject: (ctx: { data: TData; lang: Lang }) => Record<Lang, string>;
 };
 
@@ -37,7 +35,6 @@ type RegisteredEmail<TData> = {
 type Registry = Map<string, RegisteredEmail<any>>;
 const registry: Registry = new Map();
 
-/** interner Service‑State */
 let SVC:
     | (Required<Pick<EmailServiceConfig, 'templatesDir'>> & {
           transporter: Transporter;
@@ -46,7 +43,6 @@ let SVC:
       })
     | null = null;
 
-/** Initialisierung einmal pro App */
 export function initEmailService(config?: EmailServiceConfig) {
     if (SVC) return SVC;
     const templatesDir = config?.templatesDir ?? path.resolve(process.cwd(), 'templates');
@@ -60,7 +56,6 @@ export function initEmailService(config?: EmailServiceConfig) {
     return SVC;
 }
 
-/** Standard Transporter aus ENV */
 function createTransporterFromEnv(): Transporter {
     const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE, FROM_EMAIL } = process.env;
     if (!SMTP_HOST || !SMTP_PORT) {
@@ -75,13 +70,11 @@ function createTransporterFromEnv(): Transporter {
     });
 }
 
-/** Registrierung mit voller Typsicherheit */
 export function registerEmail<TData>(def: EmailDefinition<TData>) {
     if (!SVC) initEmailService();
     if (registry.has(def.id)) {
         throw new Error(`E‑Mail "${def.id}" ist bereits registriert`);
     }
-    // Validierung Sprachenmenge
     const allLangs = resolveLanguages(def);
     if (allLangs.length === 0) {
         throw new Error(`Sprachenmenge für "${def.id}" ist leer`);
@@ -92,7 +85,6 @@ export function registerEmail<TData>(def: EmailDefinition<TData>) {
     });
 
     return {
-        /** Bequemes strikt typisiertes Senden */
         send: (args: {
             to: string | string[];
             data: TData;
@@ -117,7 +109,6 @@ export function registerEmail<TData>(def: EmailDefinition<TData>) {
     };
 }
 
-/** Haupt‑API */
 export async function sendEmail<TData>(args: {
     templateId: string;
     to: string | string[];
@@ -172,7 +163,6 @@ export async function sendEmail<TData>(args: {
     };
 }
 
-/** Sprachenauflösung: pro E‑Mail oder global */
 function resolveLanguages(def: AnyEmailDefinition): readonly Lang[] {
     const svc = SVC!;
     const set = new Set<Lang>(svc.languages);
@@ -180,14 +170,12 @@ function resolveLanguages(def: AnyEmailDefinition): readonly Lang[] {
     return Array.from(set.values());
 }
 
-/** Sprachwahl mit Fallback auf globalen Default */
 function pickLang(requested: Lang | undefined, allowed: readonly Lang[], fallback: DefaultLang): Lang {
     if (requested && allowed.includes(requested)) return requested;
     if (allowed.includes(fallback)) return fallback;
     return allowed[0] as Lang;
 }
 
-/** Templates/<folder>/<lang>.hbs lesen, kompilieren und cachen */
 async function renderHtmlFromFs<TData>(opts: {
     templatesDir: string;
     folder: string;
@@ -207,7 +195,6 @@ async function renderHtmlFromFs<TData>(opts: {
     return compiled(data);
 }
 
-/** einfacher Plain‑Text Fallback */
 function stripHtml(html: string) {
     return html
         .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -217,10 +204,6 @@ function stripHtml(html: string) {
         .trim();
 }
 
-/* =========================
-   Beispiel: Registrierung
-   ========================= */
-
 export type WelcomeEmailData = {
     userName: string;
     signupDateIso: string;
@@ -228,7 +211,6 @@ export type WelcomeEmailData = {
 
 export const WelcomeEmail = registerEmail<WelcomeEmailData>({
     id: 'welcome-email',
-    // optional enger: languages: ["de", "en"] as const,
     subject: ({ data }) => ({
         de: `Willkommen, ${data.userName}`,
         en: `Welcome, ${data.userName}`,
@@ -242,7 +224,7 @@ initEmailService({
 });
 
 /* =========================
-   Beispiel: Bootstrap
+   Example: Server-side initialization
    ========================= */
 
 // initEmailService({
@@ -253,7 +235,7 @@ initEmailService({
 // });
 
 /* =========================
-   Beispiel: Senden
+   Example: Send email
    ========================= */
 
 // await WelcomeEmail.send({
