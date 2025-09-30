@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+.drizzle
+.next/cache
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode
+.idea
+
+# Misc
+.DS_Store

@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  web:
+    image: next-app:${IMAGE_TAG:-dev}
+    # oder direkt bauen:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+      - .env.local
+    restart: unless-stopped
