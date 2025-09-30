@@ -1,4 +1,4 @@
-# RJKS ERP Boilerplate
+# Nextjs App Router + Supabase Boilerplate
 
 Production-ready **Next.js App Router** boilerplate using **Supabase**, **Drizzle ORM**, typed **Handlebars email templates**, and clean CLI scripting.
 
